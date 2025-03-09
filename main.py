@@ -12,13 +12,14 @@ class CyclicVoltammetryToolbox:
         self.concentration = None
         self.variables = {}
 
+# method to get the file path into the data_files folder
     def get_data_file_path(self, file_name):
         if hasattr(sys, '_MEIPASS'):
             base_dir = os.path.join(sys._MEIPASS, 'data_files')
         else:
             base_dir = os.path.join(os.getcwd(), 'data_files')
         return os.path.join(base_dir, file_name)
-
+# method to load the data from the file
     def load_data(self):
         file_path = self.get_data_file_path(self.file_name)
         try:
@@ -27,7 +28,7 @@ class CyclicVoltammetryToolbox:
         except Exception as e:
             print(f"Error loading data from {file_path}: {e}")
             return None
-
+# method to parse the data from the file
     def parse_data(self, content):
         data_points = []
         for line in content.split('\n'):
@@ -68,27 +69,6 @@ class CyclicVoltammetryToolbox:
 
         self.oxidation_peak = oxidation_peak
         self.reduction_peak = reduction_peak
-    def find_peaks(self):
-        oxidation_peak = []
-        reduction_peak = []
-        increasing = True
-        for i in range(1, len(self.data_points) - 1):
-            prev_point = self.data_points[i - 1]
-            curr_point = self.data_points[i]
-            next_point = self.data_points[i + 1]
-            
-            if increasing:
-                if curr_point[0] < next_point[0]:
-                    if curr_point[1] > prev_point[1] and curr_point[1] > next_point[1]:
-                        oxidation_peak.append(curr_point)
-                else:
-                    increasing = False
-            if not increasing:
-                if curr_point[0] > next_point[0]:
-                    if curr_point[1] < prev_point[1] and curr_point[1] < next_point[1]:
-                        reduction_peak.append(curr_point)
-        self.oxidation_peak = oxidation_peak
-        self.reduction_peak = reduction_peak
 
     def generate_graph(self, output_file):
         try:
@@ -108,7 +88,12 @@ class CyclicVoltammetryToolbox:
             plt.xlabel('Potential (V)')
             plt.ylabel('Current ($\mu$A)')
             plt.legend()
+            plt.show()
+
             plt.savefig(output_file)
+
+            print(f"Graph successfully saved at: {output_file}")
+            plt.close()
         except Exception as e:
             raise
 
@@ -171,7 +156,11 @@ def main():
     if content:
         cv_toolbox.parse_data(content)
         cv_toolbox.find_peaks()
-        output_graph_path = os.path.join(os.path.dirname(cv_toolbox.get_data_file_path(file_path)), "output_graph.png")
+
+        output_graph_path = os.path.join(
+            os.path.dirname(cv_toolbox.get_data_file_path(file_path)),
+            f"{os.path.basename(file_path).split('.')[0]}_graph.png")
+        print(f"Attempting to save graph at: {output_graph_path}")
         cv_toolbox.generate_graph(output_graph_path)
         cv_toolbox.calculate_concentration()
 
